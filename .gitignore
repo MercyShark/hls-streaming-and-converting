@@ -1,0 +1,5 @@
+*/hls
+*/uploads
+*.pyc
+/env
+.env

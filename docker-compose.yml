@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  fastapi:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo_db
+      - rabbitmq
+
+    environment:
+      - MONGO_URL=mongodb://mongo_db:27017
+      - RABBITMQ_URL=rabbitmq
+      - RABBITMQ_DEFAULT_USER=rishabh
+      - RABBITMQ_DEFAULT_PASS=test1234
+
+    volumes:
+      -  original-data:/app/uploads/
+
+  mongo_db:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  nginx:
+      image: nginx:latest
+      container_name: nginxg
+      volumes:
+        - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+        # - ./backend/hls:/app/static
+        - ./frontend/index.html:/usr/share/nginx/html/index.html
+        - shared-data:/app/static
+      ports:
+        - "80:80"
+      
+      depends_on:
+        - fastapi
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   
+      - "15672:15672" 
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  rabbitmqcon:
+    build: ./backend/consumer
+    depends_on:
+      - rabbitmq
+    environment:
+    - MONGO_URL=mongo_db
+    - RABBITMQ_URL=rabbitmq
+    - RABBITMQ_DEFAULT_USER=rishabh
+    - RABBITMQ_DEFAULT_PASS=test1234
+
+    volumes:
+      - shared-data:/app/hls
+      - original-data:/app/uploads/
+volumes:
+  mongo-data:
+  rabbitmq_data:
+  shared-data:
+  original-data:
