@@ -52,7 +52,7 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
 
   rabbitmqcon:
-    build: ./backend/consumer
+    build: ./consumer
     depends_on:
       - rabbitmq
     environment:
