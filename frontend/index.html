@@ -1,68 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HLS Player with Quality and Speed Controls</title>
-  <link href="https://unpkg.com/video.js/dist/video-js.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css" rel="stylesheet">
-  <link href="https://unpkg.com/@videojs/themes@1/dist/forest/index.css" rel="stylesheet">
-  <script src="https://unpkg.com/htmx.org@1.8.5"></script>
-  <style>
-    /* Custom City Theme */
-    .main-div {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      flex-direction: column;
-    }
-    #my-video{
-      height: 80%;
-      width: 80%;
-    }
-
-    .vjs-big-play-button{
-     height: 400px;
-     width: 400px; 
-    }
-  </style>
-</head>
-<body>
-  <div class="main-div">
-      <h1>Wild Life is Danger </h1>
-        <video id="my-video" class="video-js vjs-theme-forest" controls preload="auto" autoplay data-setup="{}" poster="./2image.jpg">
-          <source src="http://localhost/static/hello/master.m3u8" type="application/x-mpegURL">
-        </video>
-
-        <div>
-          Comments
-        </div>
-    </div>
-
-
-  <!-- Include Video.js and Plugins -->
-  <script src="https://unpkg.com/video.js/dist/video.js"></script>
-  <script src="https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/videojs-playbackrate-adjuster/dist/videojs-playbackrate-adjuster.min.js"></script>
-  <script src="https://unpkg.com/videojs-sprite-thumbnails@2.2.1/dist/videojs-sprite-thumbnails.min.js"></script>
-  <script>
-    // Initialize Video.js player
-    var player = videojs('my-video');
-
-    // Load quality levels and quality selector plugin
-    player.qualityLevels();
-    player.hlsQualitySelector();
-
-    player.bigPlayButton.on('click', function(){
-    console.log("working");
-    });
-    
-
-
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modern Video Upload and Streaming Interface</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
