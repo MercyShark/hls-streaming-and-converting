@@ -1,62 +1,52 @@
-# import pika
-# import threading
-# from gg import generate_segments_and_master_playlist
-# # Establishing connection parameters
-# connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-# channel = connection.channel()
-
-# # Declaring the queue
-# channel.queue_declare(queue='video_quality_conversion_queue')
-# def run_subprocess_and_ack(ch, delivery_tag, file_location, output_dir):
-#     try:
-#         # Run the ffmpeg subprocess
-#         generate_segments_and_master_playlist(file_location, output_dir=output_dir) 
-#         # Acknowledge the message if the subprocess succeeds
-#         ch.basic_ack(delivery_tag=delivery_tag)
-#     except Exception as e:
-#         # Handle subprocess errors (logging, retrying, etc.)
-#         print(f"Subprocess failed: {e}")
-#         # Optionally, you can reject the message and requeue it
-#         ch.basic_nack(delivery_tag=delivery_tag, requeue=True)
-
-# # Callback function to handle incoming messages
-# def callback(ch, method, properties, body):
-#     # Process the message
-#     print("Received:", body.decode())
-#     print(method.delivery_tag)
-#     # Simulate processing time
-#     # Replace this with your actual processing logic
-#     import json
-#     data = json.loads(body)
-#     file_location = data['file_path']
-#     output_dir = data['output_dir']
-   
-#     thread = threading.Thread(target=run_subprocess_and_ack, args=(ch, method.delivery_tag, file_location, output_dir))
-#     thread.start()
-
-#     while thread.is_alive():
-#         connection.process_data_events()
-#         import time
-#         time.sleep(10)
-    
-#     # ch.basic_ack(delivery_tag=method.delivery_tag)
-#     # Acknowledge the message to remove it from the queue
-
-# # Registering the callback function to consume messages
-# channel.basic_consume(queue='video_quality_conversion_queue', on_message_callback=callback)
-
-# # Start consuming messages
-# print('Waiting for messages...')
-# channel.start_consuming()
-
 
 import pika
 from utils  import generate_segments_and_master_playlist
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from dotenv import load_dotenv
 import os
+import boto3
+from botocore.config import Config
+import shutil
+
+load_dotenv()
 client = MongoClient(os.getenv("MONGO_URL"), 27017)
 files_collection = client['uploads']['files']
+
+
+s3_client = boto3.client(
+    "s3",
+    endpoint_url=os.getenv("R2_ENDPOINT_URL"),
+    aws_access_key_id=os.getenv("R2_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("R2_SECRET_KEY"),
+    config=Config(signature_version="s3v4"),
+    region_name="auto",
+)
+
+
+
+
+def fetch_from_r2(bucket, key):
+    response = s3_client.get_object(Bucket=bucket, Key=key)
+    content = response['Body'].read()
+    return content
+
+
+def upload_to_r2(local_folder):
+
+    if not os.path.isdir(local_folder):
+        print(f"Directory does not exist: {local_folder}")
+        return
+    try:
+        for root, _, files in os.walk(local_folder):
+            for file in files:
+                local_path = os.path.join(root, file)
+                normalized_path = local_path.replace("\\", "/")
+                s3_client.upload_file(normalized_path, os.getenv("R2_BUCKET_NAME"), normalized_path)
+
+    except Exception as e:
+        print(f"Error uploading files to R2: {e}")
+
 def callback(ch, method, properties, body):
     print(" [x] Received %r" % body)
     import json
@@ -64,10 +54,22 @@ def callback(ch, method, properties, body):
     file_location = data['file_path']
     output_dir = data['output_dir']
     file_id = data['file_id']
+
+
+    data = fetch_from_r2(bucket=os.getenv("R2_BUCKET_NAME"), key=file_location)
+    os.makedirs(os.path.dirname(file_location), exist_ok=True)
+    with open(file_location, 'wb') as f:
+        f.write(data)
+
     status = generate_segments_and_master_playlist(file_location, output_dir=output_dir)
+
+    
     if status:
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        upload_to_r2(output_dir)
+        shutil.rmtree(os.path.dirname(output_dir))
+        os.remove(file_location)
         resutlt = files_collection.update_one({"_id": ObjectId(file_id)}, {"$set": {"is_converted": True}})
+        ch.basic_ack(delivery_tag=method.delivery_tag)
         print(f" [x] Updated {resutlt.modified_count} document")
         print(" [x] Done")
     else:
