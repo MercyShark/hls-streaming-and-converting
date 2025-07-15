@@ -41,7 +41,7 @@ const HomePage: React.FC = () => {
             show: true,
             message: `Video conversion completed for ${data.filename || 'your video'}!`
           });
-          // fetchVideos();
+          fetchVideos();
         } else if (data.message) {
           setNotification({
             show: true,
