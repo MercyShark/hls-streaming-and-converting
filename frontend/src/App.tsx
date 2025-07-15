@@ -1,14 +1,17 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
-import VideoPlayerPage from './pages/VideoPlayerPage';
+import VideoPlayer from './components/VideoPlayer';
+import { dummyVideos } from './data/dummyData';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/player/:videoId" element={<VideoPlayerPage />} />
-    </Routes>
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/player/:id" element={<VideoPlayer videos={dummyVideos} />} />
+      </Routes>
+    </Router>
   );
 }
 

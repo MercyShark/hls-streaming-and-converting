@@ -1,82 +1,35 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Play, Calendar, HardDrive, Clock } from 'lucide-react';
-import { VideoData } from '../data/mockVideos';
+import { Play } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-interface VideoListProps {
-  videos: VideoData[];
-}
+import { VideoMetadataList } from '../pages/HomePage';
 
-const VideoList: React.FC<VideoListProps> = ({ videos }) => {
-  const navigate = useNavigate();
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  };
-
-  const handleVideoClick = (videoId: string) => {
-    navigate(`/player/${videoId}`);
-  };
-
+const VideoList = ({ videos }: { videos: VideoMetadataList }) => {
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
-        <Play className="text-emerald-600" size={28} />
-        Video Library
-      </h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="bg-gray-900 rounded-xl shadow-2xl p-4 sm:p-6 border border-gray-800">
+      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">HLS Video Streams</h2>
+      
+      <div className="space-y-3 sm:space-y-4">
         {videos.map((video) => (
           <div
-            key={video.id}
-            className="group bg-gray-50 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
-            onClick={() => handleVideoClick(video.id)}
+            key={video.unique_filename}
+            className="bg-gray-800 rounded-lg p-3 sm:p-4 hover:bg-gray-700 transition-all duration-300 border border-gray-700"
           >
-            <div className="relative overflow-hidden">
-              <img
-                src={video.thumbnail}
-                alt={video.title}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition-all duration-300">
-                <div className="bg-emerald-600 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300">
-                  <Play size={24} fill="currentColor" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex-1">
+                <h3 className="font-semibold text-white mb-2 text-sm sm:text-base">
+                  {video.original_filename}
+                </h3>
+                <div className="text-xs text-gray-400 font-mono bg-gray-700 p-2 rounded break-all sm:truncate">
+                  {video.hls_url}
                 </div>
               </div>
-              <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs font-medium">
-                {video.duration}
-              </div>
-            </div>
-
-            <div className="p-4">
-              <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 group-hover:text-emerald-600 transition-colors">
-                {video.title}
-              </h3>
-              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                {video.description}
-              </p>
               
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center gap-1">
-                  <Calendar size={12} />
-                  <span>{formatDate(video.uploadDate)}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <Clock size={12} />
-                    <span>{video.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <HardDrive size={12} />
-                    <span>{video.size}</span>
-                  </div>
-                </div>
-              </div>
+              <Link
+                to={`/player/${video.unique_filename}?url=${encodeURIComponent(video.hls_url)}&title=${encodeURIComponent(video.original_filename)}`}
+                className="sm:ml-4 bg-blue-600 text-white p-2 sm:p-3 rounded-full hover:bg-blue-700 transition-colors flex items-center justify-center self-center sm:self-auto"
+              >
+                <Play size={16} fill="currentColor" className="sm:w-5 sm:h-5" />
+              </Link>
             </div>
           </div>
         ))}

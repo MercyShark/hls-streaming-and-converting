@@ -52,4 +52,12 @@ export const uploadFileMetadata = async (fileName: string, mimeType: string, fil
 };
 
 
-
+export const getVideos = async () => { 
+  try {
+    const response = await axiosInstance.get('/files/all');
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching videos:", error);
+    throw error;
+  }
+}
