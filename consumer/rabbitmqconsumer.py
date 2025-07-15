@@ -8,6 +8,9 @@ import os
 import boto3
 from botocore.config import Config
 import shutil
+import redis
+import json
+r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 load_dotenv()
 client = MongoClient(os.getenv("MONGO_URL"), 27017)
@@ -22,9 +25,6 @@ s3_client = boto3.client(
     config=Config(signature_version="s3v4"),
     region_name="auto",
 )
-
-
-
 
 def fetch_from_r2(bucket, key):
     response = s3_client.get_object(Bucket=bucket, Key=key)
@@ -68,9 +68,11 @@ def callback(ch, method, properties, body):
         upload_to_r2(output_dir)
         shutil.rmtree(os.path.dirname(output_dir))
         os.remove(file_location)
-        resutlt = files_collection.update_one({"_id": ObjectId(file_id)}, {"$set": {"is_converted": True}})
+        result = files_collection.update_one({"_id": ObjectId(file_id)}, {"$set": {"is_converted": True}})
         ch.basic_ack(delivery_tag=method.delivery_tag)
-        print(f" [x] Updated {resutlt.modified_count} document")
+        hls_url = f"{os.getenv('HLS_BASE_URL')}/{output_dir}/master.m3u8"
+        r.publish('notify', json.dumps({"type": "conversion_complete", "hls_url": hls_url, "file_id": str(file_id)}))
+        print(f" [x] Updated {result.modified_count} document")
         print(" [x] Done")
     else:
         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True) 
