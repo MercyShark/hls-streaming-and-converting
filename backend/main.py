@@ -1,5 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 import shutil
 from pathlib import Path
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -15,6 +15,13 @@ import os
 from pydantic import BaseModel
 import boto3
 from botocore.config import Config
+from fastapi import WebSocket, WebSocketDisconnect
+import redis
+import threading
+import asyncio
+
+
+
 
 load_dotenv()
 UPLOAD_DIRECTORY = Path("uploads")
@@ -53,7 +60,48 @@ s3_client = boto3.client(
     region_name="auto",
 )
 
+r = redis.Redis(decode_responses=True)
+pubsub = r.pubsub()
 
+clients = set()
+pubsub.subscribe('notify')
+
+
+async def broadcast_message(message: dict):
+    json_message = json.dumps(message)
+    for ws in clients.copy():
+        try:
+            await ws.send_text(json_message)
+        except WebSocketDisconnect:
+            clients.remove(ws)
+
+# Background thread to listen to Redis and broadcast to WebSocket clients
+def redis_listener():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    for msg in pubsub.listen():
+        if msg['type'] == 'message':
+            try:
+                json_data = json.loads(msg['data'])
+                loop.run_until_complete(broadcast_message(json_data))
+            except json.JSONDecodeError:
+                print(f"Invalid JSON received: {msg['data']}")
+                loop.run_until_complete(broadcast_message({"message": msg['data']}))
+
+
+# Start the Redis listener thread
+threading.Thread(target=redis_listener, daemon=True).start()
+
+# WebSocket endpoint
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    clients.add(websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # Optional: to keep the connection alive
+    except WebSocketDisconnect:
+        clients.remove(websocket)
 
 class GenerateURLRequest(BaseModel):
     filename: str
@@ -141,7 +189,7 @@ async def create_upload_file(data: UploadCompleteRequest):
 
 
 
-@app.get("/files/all")
+@app.get("/files/all/")
 async def get_all_files():
     files = []
     instances = files_collection.find({"is_converted": True}, {"_id": 0}).sort(
@@ -150,20 +198,16 @@ async def get_all_files():
     async for file in instances:
         files.append(
             {
-                # "file_id": str(file["_id"]),
                 "original_filename": file["original_filename"],
                 "unique_filename": file["unique_filename"],
                 "content_type": file["content_type"],
                 "file_size": str(file["file_size"]),
                 "upload_time": file["upload_time"].isoformat(),
-                "file_path": file["file_path"],
-                "url": "http://localhost:8000/media/" + file["unique_filename"],
-                "hls_url": "http://localhost:8000/hls/"
-                + file["unique_filename"].split(".")[0]
-                + "/master.m3u8",
+                "hls_url": f"{os.getenv('R2_PUBLIC_URL')}/{HLS_VIDEO_DIRECTORY_NAME}/{os.path.splitext(file['unique_filename'])[0]}/master.m3u8"
+
             }
         )
-    return files
+    return JSONResponse(content=files, status_code=200)
 
 
 if __name__ == "__main__":
