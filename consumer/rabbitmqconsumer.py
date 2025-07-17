@@ -10,7 +10,7 @@ from botocore.config import Config
 import shutil
 import redis
 import json
-r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+r = redis.Redis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
 
 load_dotenv()
 client = MongoClient(os.getenv("MONGO_URL"), 27017)
@@ -80,9 +80,9 @@ def callback(ch, method, properties, body):
 connection = pika.BlockingConnection(
             pika.ConnectionParameters( host= os.getenv("RABBITMQ_URL"),heartbeat=0,credentials=pika.PlainCredentials(username=os.getenv("RABBITMQ_DEFAULT_USER"), password=os.getenv("RABBITMQ_DEFAULT_PASS"))))
 channel = connection.channel()
-channel.queue_declare(queue='video_quality_conversion_queue')
+channel.queue_declare(queue=os.getenv("RABBITMQ_QUEUE_NAME"))
 channel.basic_qos(prefetch_count=1)
-channel.basic_consume(queue='video_quality_conversion_queue', on_message_callback=callback)
+channel.basic_consume(queue=os.getenv("RABBITMQ_QUEUE_NAME"), on_message_callback=callback)
 print(' [*] Waiting for messages. To exit press CTRL+C')
 channel.start_consuming()
 
