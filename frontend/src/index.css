@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Video.js dark theme customization */
+.video-js {
+  background-color: #000;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.video-js .vjs-control-bar {
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%);
+}
+
+.video-js .vjs-big-play-button {
+  background-color: rgba(59, 130, 246, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  line-height: 80px;
+  font-size: 32px;
+}
+
+.video-js .vjs-big-play-button:hover {
+  background-color: rgba(59, 130, 246, 1);
+}
+
+.video-js .vjs-control:focus {
+  outline: 2px solid #3b82f6;
+}
+
+.video-js .vjs-slider {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.video-js .vjs-load-progress {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.video-js .vjs-play-progress {
+  background-color: #3b82f6;
+}
+
+.video-js .vjs-volume-level {
+  background-color: #3b82f6;
+}
+
+.video-js .vjs-menu-content {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+}
+
+.video-js .vjs-menu li {
+  color: #e5e7eb;
+}
+
+.video-js .vjs-menu li:hover {
+  background-color: #374151;
+}
+
+.video-js .vjs-menu li.vjs-selected {
+  background-color: #3b82f6;
+}
+
+/* Loading spinner */
+.video-js .vjs-loading-spinner {
+  border-color: #3b82f6 transparent transparent transparent;
+}
+
+/* Error display */
+.video-js .vjs-error-display {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #ef4444;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .video-js .vjs-big-play-button {
+    width: 60px;
+    height: 60px;
+    line-height: 60px;
+    font-size: 24px;
+  }
+  
+  .video-js .vjs-control-bar {
+    font-size: 14px;
+  }
+  
+  .video-js .vjs-button {
+    padding: 0.3em;
+  }
+}
+
+@media (max-width: 480px) {
+  .video-js .vjs-big-play-button {
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+    font-size: 20px;
+  }
+  
+  .video-js .vjs-control-bar {
+    font-size: 12px;
+  }
+}

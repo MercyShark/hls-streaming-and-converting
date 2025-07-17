@@ -51,7 +51,7 @@ def generate_segments_and_master_playlist(input_file : str, output_dir : str):
     # Create directory for movie if it doesn't exist
     try:
         if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+            os.makedirs(output_dir) 
         create_hls_streams(input_file, output_dir)
         create_master_playlist(output_dir)
         print(f"HLS segments and master playlist created successfully in {output_dir}.")
