@@ -60,7 +60,7 @@ s3_client = boto3.client(
     region_name="auto",
 )
 
-r = redis.Redis(decode_responses=True)
+r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 pubsub = r.pubsub()
 
 clients = set()
@@ -156,7 +156,7 @@ async def create_upload_file(data: UploadCompleteRequest):
             )
         )
         channel = connection.channel()
-        channel.queue_declare(queue="video_quality_conversion_queue")
+        channel.queue_declare(queue="")
 
 
         result = await files_collection.insert_one(
@@ -213,4 +213,4 @@ async def get_all_files():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host=os.environ("API_HOST"), port=os.environ("PORT"), reload=True)
