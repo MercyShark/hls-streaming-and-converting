@@ -60,7 +60,7 @@ s3_client = boto3.client(
     region_name="auto",
 )
 
-r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+r = redis.Redis(host=os.environ("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
 pubsub = r.pubsub()
 
 clients = set()
@@ -92,7 +92,10 @@ def redis_listener():
 # Start the Redis listener thread
 threading.Thread(target=redis_listener, daemon=True).start()
 
-# WebSocket endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
