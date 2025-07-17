@@ -1,26 +1,45 @@
 version: '3.8'
 
 services:
-  fastapi:
-    build: ./backend
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     depends_on:
       - mongo_db
       - rabbitmq
+      - redis-stack
 
-    environment:
-      - MONGO_URL=mongodb://mongo_db:27017
-      - RABBITMQ_URL=rabbitmq
-      - RABBITMQ_DEFAULT_USER=user
-      - RABBITMQ_DEFAULT_PASS=password
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.docker
+ 
+    networks:
+      - hls-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   mongo_db:
     image: mongo:latest
     ports:
       - "27017:27017"
+    
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-video_streaming}
     volumes:
       - mongo-data:/data/db
+
+    networks:
+      - hls-network
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -29,20 +48,36 @@ services:
       - "5672:5672"   
       - "15672:15672" 
     environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-password}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+    networks:
+      - hls-network
+
+
   rabbitmqcon:
-    build: ./consumer
+    build: 
+      context: ./consumer
+      dockerfile: Dockerfile
     depends_on:
       - rabbitmq
-    environment:
-    - MONGO_URL=mongo_db
-    - RABBITMQ_URL=rabbitmq
-    - RABBITMQ_DEFAULT_USER=user
-    - RABBITMQ_DEFAULT_PASS=password
+      - redis-stack
+    env_file:
+      - ./consumer/.env.docker
+    restart: unless-stopped
+    networks:
+      - hls-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
 
   redis-stack:
     image: redis/redis-stack:latest
@@ -51,6 +86,19 @@ services:
       - "6379:6379"
       - "8001:8001"
     restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+    volumes:
+      - redis_data:/data
+    networks:
+      - hls-network
+
+
 volumes:
   mongo-data:
   rabbitmq_data:
+  redis_data:
+
+networks:
+  hls-network:
+    driver: bridge
