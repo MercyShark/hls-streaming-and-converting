@@ -60,7 +60,7 @@ s3_client = boto3.client(
     region_name="auto",
 )
 
-r = redis.Redis(host=os.environ("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
+r = redis.Redis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
 pubsub = r.pubsub()
 
 clients = set()
@@ -216,4 +216,4 @@ async def get_all_files():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host=os.environ("API_HOST"), port=os.environ("PORT"), reload=True)
+    uvicorn.run("main:app", host=os.getenv("API_HOST"), port=int(os.getenv("PORT")), reload=True)
