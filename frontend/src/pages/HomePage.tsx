@@ -4,7 +4,7 @@ import VideoUpload from '../components/VideoUpload';
 import VideoList from '../components/VideoList';
 import Notification from '../components/Notification';
 import { generatePresignedUrl, uploadFileToS3, uploadFileMetadata, getVideos } from '../api';
-
+import { dummyVideos } from '../data/dummyData';
 export interface VideoMetadata {
   original_filename: string;
   unique_filename: string;
@@ -17,7 +17,7 @@ export interface VideoMetadata {
 export type VideoMetadataList = VideoMetadata[];
 
 const HomePage: React.FC = () => {
-  const [videos, setVideos] = useState<VideoMetadataList[]>([]);
+  const [videos, setVideos] = useState<VideoMetadataList[]>(dummyVideos);
   const [notification, setNotification] = useState({ show: false, message: '' });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -66,7 +66,12 @@ const HomePage: React.FC = () => {
       const videoList = await getVideos();
       setVideos(videoList);
     } catch (error) {
+      setVideos(dummyVideos); // Fallback to dummy data on error
       console.error("Failed to fetch videos:", error);
+      setNotification({
+        show: true,
+        message: "Backend is down. Enjoy the videos!"
+      });
     } finally {
       setIsLoading(false);
     }
